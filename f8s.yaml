@@ -1,0 +1,8 @@
+---
+- name: Install f8s (Kubernetes on Fedora)
+  hosts: localhost
+  tasks:
+
+    - name: Install Kubernetes
+      ansible.builtin.import_role:
+        name: kubernetes

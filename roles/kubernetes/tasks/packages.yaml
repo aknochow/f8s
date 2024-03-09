@@ -1,0 +1,14 @@
+---
+- name: Ensure required dnf packages
+  ansible.builtin.dnf:
+    name:
+      - kubernetes-client
+      - kubernetes-kubeadm 
+      - kubernetes-node 
+      # - python
+      # - python3-libsemanage
+      # - python3-policycoreutils
+      # - policycoreutils-python-utils
+      # - python3-psycopg2
+    state: latest
+  become: true
