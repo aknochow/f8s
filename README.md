@@ -1,29 +1,34 @@
 # f8s - Kubernetes on Fedora
+f8s is an [Ansible](https://www.ansible.com) playbook for deploying [Kubernetes](https://kubernetes.io) on [Fedora](https://fedoraproject.org)
+
+This playbook is intended to be run against a remote host but can also be used on your local machine if running Fedora.
+
+#### Note - The playbook is currently still being developed and isn't finished yet.  Please stay tuned for updates!
+
+#### Supported Operating Systems:
+- Fedora Cloud (https://fedoraproject.org/cloud)
+- Fedora Server (https://fedoraproject.org/server)
+- Fedora Workstation (https://fedoraproject.org/workstation)
 
 ## Requirements:
+You must have [Ansible](https://www.ansible.com) and the [Kubernetes collection](https://galaxy.ansible.com/ui/repo/published/kubernetes/core) installed on the host running the playbook.
 
-Operating System
-- Fedora or Fedora CoreOS (tested on 38+)
+#### Ansible: [(Read the official guide for installing Ansible)](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 
-RPM Packages:
-- ansible-core 
-- git-core
-
-Collections:
-- community.kubernetes
-
-### Install Requirements
-
-Install the requirements by running the prepare.sh script or manually running the commands.
-
-#### Script:
+#### Kubernetes collection:
 ```
-bash prepare.sh
+ansible-galaxy collection install kubernetes.core
+```
+#### Script for preparing Fedora hosts:
+The following script is available for preparing Fedora hosts:
+```
+bash prepare-fedora.sh
 ```
 
-#### Manual Commands (Fedora):
+## Usage
+Run the playbook:
 ```
-sudo dnf install ansible-core git-core
+ansible-playbook f8s.yaml
+```
 
-ansible-galaxy collection install community.kubernetes
-```
+> Note - The playbook isn't finished yet.  Currently working on the main kubernetes role.

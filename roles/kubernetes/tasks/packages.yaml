@@ -2,6 +2,8 @@
 - name: Ensure required dnf packages
   ansible.builtin.dnf:
     name:
+      - containernetworking-plugins
+      - iproute-tc
       - kubernetes-client
       - kubernetes-kubeadm 
       - kubernetes-node 
@@ -12,3 +14,19 @@
       # - python3-psycopg2
     state: latest
   become: true
+
+- name: Ensure pip is installed and upgraded
+  ansible.builtin.shell:
+    cmd: "{{ ansible_facts.python.executable }} -m ensurepip --upgrade"
+
+- name: Install python packages
+  ansible.builtin.pip:
+    name: "{{ item }}"
+  loop:
+    # - build
+    # - cryptography<39
+    # - jwt
+    - kubernetes  
+    # - oauthlib
+    # - requests
+    # - setuptools_scm

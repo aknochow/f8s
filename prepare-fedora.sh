@@ -1,7 +1,7 @@
 #!/bin/sh
 # Prepare host for f8s playbook
 
-RPM_PACKAGES="ansible-core,git-core"
+RPM_PACKAGES="ansible-core"
 COLLECTIONS="kubernetes.core"
 
 if ! [ -f /etc/os-release ]; then
@@ -16,8 +16,12 @@ if [[ "$PRETTY_NAME" == "Fedora Linux"* ]]; then
     RPM_MANAGER=DNF
 elif [[ "$PRETTY_NAME" == "Fedora CoreOS"* ]]; then
     RPM_MANAGER=OSTREE
+    # TODO - Remove this when CoreOS support is complete.
+    echo -e "(f8s support for Fedora CoreOS is not yet ready, check back soon!)\n"
+    exit 1
 else
-    echo -e "(f8s requires Fedora or Fedora CoreOS)\n"
+    echo -e "ERROR - Fedora Linux not detected."
+    echo -e "(f8s requires Fedora!)\n"
     exit 1
 fi
 

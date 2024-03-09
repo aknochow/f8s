@@ -1,0 +1,9 @@
+# This is an example of a basic inventory file.  For full documention please see:
+# https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html
+---
+f8s:
+  hosts:
+    ## Set this to your Fedora host you want to install f8s on
+    f8s.example.com:
+      # Set this to the remote user with sudo permissions on the Fedora host
+      ansible_user: fedora
