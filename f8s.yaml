@@ -1,6 +1,8 @@
 ---
 - name: Install f8s (Kubernetes on Fedora)
   hosts: all
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
   become: true
   tasks:
 
