@@ -3,6 +3,12 @@
   ansible.builtin.include_tasks: 
     file: packages.yaml
 
+- name: Ensure firewalld is running
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true
+
 - name: Set up Firewall for Kubernetes
   ansible.posix.firewalld:
     port: "{{ item }}/tcp"
@@ -54,8 +60,15 @@
 
 - name: Initialize the Kubernetes cluster
   ansible.builtin.shell:
-  ignore_errors: true
     cmd: kubeadm init --pod-network-cidr=10.244.0.0/16
+  ignore_errors: true
+
+- name: Create the .kube directory
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
 
 - name: Copy kubeconfig to {{ ansible_user }}'s home directory
   ansible.builtin.copy:
@@ -65,17 +78,23 @@
     group: "{{ ansible_user }}"
     remote_src: true
 
-- name: Taint node {{ ansible_host }}
-  kubernetes.core.k8s_taint:
-    state: present
-    name: "{{ ansible_host }}"
-    taints:
-    - effect: Execute
+# - name: Taint node {{ ansible_host }} as master node
+#   kubernetes.core.k8s_taint:
+#     state: present
+#     name: "{{ ansible_host }}"
+#     taints:
+#       - key: node-role.kubernetes.io/master
+#         effect: PreferNoSchedule
+
+- name: Download Flannel YAML
+  get_url:
+    url: 'https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml'
+    dest: '/tmp/kube-flannel.yml'
 
 - name: Install Flannel (Layer 3 Network Fabric for Kubernetes)
   kubernetes.core.k8s:
     state: present
-    src: '{{ lookup("url", "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml") }}'
+    src: '/tmp/kube-flannel.yml'
 
 # - name: Set up nfs storage class
 #   include_tasks: nfs.yaml
