@@ -1,0 +1,18 @@
+---
+
+- name: Print join command
+  ansible.builtin.debug:
+    msg: "{{ join_command }}"
+  when: join_command is defined
+
+- name: Print host name
+  ansible.builtin.debug:
+    msg: "{{ ansible_host }}"
+
+- name: Use join command to join worker nodes to the cluster
+  ansible.builtin.shell:
+    cmd: "{{ join_command }}"
+  when: join_command is defined
+  ignore_errors: true
+  register: join_output
+
