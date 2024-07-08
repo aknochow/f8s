@@ -1,0 +1,7 @@
+---
+- name: Install NFS StorageClass Provisioner using Helm
+  hosts: localhost
+  tasks:
+    - name: Include nfs-provisioner role
+      ansible.builtin.include_role:
+        name: ../nfs-provisioner

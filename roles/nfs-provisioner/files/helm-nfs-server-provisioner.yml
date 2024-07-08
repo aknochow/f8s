@@ -1,0 +1,5 @@
+storageClass:
+  create: true
+  defaultClass: false
+  name: nfs-local-rwx
+

@@ -1,0 +1,62 @@
+---
+- name: Check if Helm is installed
+  ansible.builtin.command: helm version --short
+  register: helm_check
+  changed_when: False
+  ignore_errors: True
+  become: false
+  delegate_to: localhost
+
+- name: Install Helm if not installed
+  ansible.builtin.command: /bin/bash -c "curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash"
+  environment:
+    VERIFY_CHECKSUM: "false"  # This is needed if openssl is not installed
+  when: helm_check.failed
+  become: false
+  delegate_to: localhost
+
+- name: Add NFS provisioner Helm repository
+  ansible.builtin.command: helm repo add stable https://charts.helm.sh/stable
+  register: helm_repo_add
+  changed_when: "'Repository already exists' not in helm_repo_add.stdout"
+  become: false
+  delegate_to: localhost
+
+- name: Update Helm repositories
+  ansible.builtin.command: helm repo update
+  when: helm_repo_add.changed
+  become: false
+  delegate_to: localhost
+
+- name: Check if NFS provisioner is already installed
+  ansible.builtin.shell: >
+    helm list --deployed | grep nfs-provisioner
+  register: helm_check
+  ignore_errors: yes
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  become: false
+  delegate_to: localhost
+
+- name: Print working directory and tree
+  ansible.builtin.command: >
+    pwd && tree
+  register: pwd_tree
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  become: false
+  delegate_to: localhost
+
+- debug:
+    msg: "{{ role_path }}"
+
+- name: Install NFS provisioner using Helm
+  ansible.builtin.command: >
+    helm install nfs-provisioner stable/nfs-server-provisioner --values={{ role_path }}/files/helm-nfs-server-provisioner.yml
+  register: helm_install
+  failed_when: "'INSTALLATION FAILED: cannot re-use a name that is still in use' not in helm_install.stderr"
+  changed_when: "'already installed' not in helm_install.stdout"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  become: false
+  delegate_to: localhost

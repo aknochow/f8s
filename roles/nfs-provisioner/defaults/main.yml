@@ -1,0 +1,4 @@
+---
+nfs_server: x.x.x.x
+nfs_path: /exported/path
+
