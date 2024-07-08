@@ -93,28 +93,28 @@
     - groups['workers'] | length > 0
     - join_command is defined
 
-# - name: Set up nfs storage class
-#   include_tasks: nfs.yaml
-#   when: dedicated_nfs
+- name: Write kubeconfig to file on localhost
+  ansible.builtin.copy:
+    content: "{{ kubeconfig }}"
+    dest: cluster.kubeconfig
+  delegate_to: localhost
+  become: false
 
-- name: Make the kubeconfig easily accessible
-  when: kubeconfig is defined
-  block:
-    - name: Print kubeconfig contents with steps on how to configure it locally
-      ansible.builtin.debug:
-        msg: |
-          export KUBECONFIG={{ kubeconfig }}
+- name: Set up nfs storage class
+  include_role:
+    name: nfs-provisioner
+  vars:
+    kubeconfig_path: ./cluster.kubeconfig
+  when: dedicated_nfs
 
-    - name: Write kubeconfig to file on localhost
-      ansible.builtin.copy:
-        content: "{{ kubeconfig }}"
-        dest: cluster.kubeconfig
-      delegate_to: localhost
-      become: false
+- name: Print kubeconfig contents with steps on how to configure it locally
+  ansible.builtin.debug:
+    msg: |
+      export KUBECONFIG={{ kubeconfig }}
 
-    - name: Explain how to access the cluster
-      ansible.builtin.debug:
-        msg: |
-          To access the cluster, run the following command:
-          export KUBECONFIG={{ lookup('pipe','pwd') }}/cluster.kubeconfig
-          kubectl get nodes
+- name: Explain how to access the cluster
+  ansible.builtin.debug:
+    msg: |
+      To access the cluster, run the following command:
+      export KUBECONFIG={{ lookup('pipe','pwd') }}/cluster.kubeconfig
+      kubectl get nodes
