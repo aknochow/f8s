@@ -7,3 +7,13 @@ f8s:
     f8s.example.com:
       # Set this to the remote user with sudo permissions on the Fedora host
       ansible_user: fedora
+
+# For multi-node clusters
+workers:
+  hosts:
+    worker1.example.com:
+      ansible_user: fedora
+      container_runtime: crio
+    worker2.example.com:
+      ansible_user: fedora
+      container_runtime: crio

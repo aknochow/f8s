@@ -1,7 +1,13 @@
 ---
 - name: Install packages
-  ansible.builtin.include_tasks: 
+  ansible.builtin.include_tasks:
     file: packages.yaml
+
+- name: Ensure firewalld is running
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true
 
 - name: Set up Firewall for Kubernetes
   ansible.posix.firewalld:
@@ -34,12 +40,19 @@
   ansible.builtin.shell:
     cmd: sysctl --system
 
+- name: Install crio
+  ansible.builtin.package:
+    name: crio
+    state: present
+  when: container_runtime == "crio"
+
+
 - name: Enable and start {{ container_runtime }} service
   ansible.builtin.systemd:
     name: "{{ container_runtime }}"
-    daemon_reload: yes
+    daemon_reload: true
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Pull needed system container images for Kubernetes
   ansible.builtin.shell:
@@ -48,35 +61,60 @@
 - name: Enable and start kubernetes kubelet service
   ansible.builtin.systemd:
     name: kubelet
-    daemon_reload: yes
+    daemon_reload: true
     state: started
-    enabled: yes
+    enabled: true
 
-- name: Initialize the Kubernetes cluster
-  ansible.builtin.shell:
-  ignore_errors: true
-    cmd: kubeadm init --pod-network-cidr=10.244.0.0/16
+- name: Bootstrap master node
+  ansible.builtin.include_tasks:
+    file: master.yaml
+  when: inventory_hostname in groups['f8s']
 
-- name: Copy kubeconfig to {{ ansible_user }}'s home directory
-  ansible.builtin.copy:
-    src: /etc/kubernetes/admin.conf
-    dest: /home/{{ ansible_user }}/.kube/config
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    remote_src: true
+- name: Bootstrap worker node
+  ansible.builtin.include_tasks:
+    file: worker.yaml
+  when:
+    - inventory_hostname in groups['workers']
+    - join_command is defined
 
-- name: Taint node {{ ansible_host }}
-  kubernetes.core.k8s_taint:
-    state: present
-    name: "{{ ansible_host }}"
-    taints:
-    - effect: Execute
-
-- name: Install Flannel (Layer 3 Network Fabric for Kubernetes)
+- name: Set labels on both worker nodes (run on f8s node)
   kubernetes.core.k8s:
     state: present
-    src: '{{ lookup("url", "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml") }}'
+    definition:
+      apiVersion: v1
+      kind: Node
+      metadata:
+        name: "{{ item }}"
+        labels:
+          node-role.kubernetes.io/worker: ''
+  loop: "{{ groups['workers'] }}"
+  delegate_to: "{{ groups['f8s'][0] }}"
+  when:
+    - groups['workers'] | length > 0
+    - join_command is defined
 
-# - name: Set up nfs storage class
-#   include_tasks: nfs.yaml
-#   when: dedicated_nfs
+- name: Write kubeconfig to file on localhost
+  ansible.builtin.copy:
+    content: "{{ kubeconfig }}"
+    dest: cluster.kubeconfig
+  delegate_to: localhost
+  become: false
+
+- name: Set up nfs storage class
+  include_role:
+    name: nfs-provisioner
+  vars:
+    kubeconfig_path: ./cluster.kubeconfig
+  when: dedicated_nfs
+
+- name: Print kubeconfig contents with steps on how to configure it locally
+  ansible.builtin.debug:
+    msg: |
+      export KUBECONFIG={{ kubeconfig }}
+
+- name: Explain how to access the cluster
+  ansible.builtin.debug:
+    msg: |
+      To access the cluster, run the following command:
+      export KUBECONFIG={{ lookup('pipe','pwd') }}/cluster.kubeconfig
+      kubectl get nodes
