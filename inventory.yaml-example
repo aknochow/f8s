@@ -1,6 +1,10 @@
 # This is an example of a basic inventory file.  For full documention please see:
 # https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html
 ---
+all:
+  vars:
+    dedicated_nfs: true
+
 f8s:
   hosts:
     ## Set this to your Fedora host you want to install f8s on
